@@ -18,15 +18,36 @@ module "eks" {
   }
 
   node_groups = {
-    t3large = {
+    t3large_az1 = {
       desired_capacity = 1
       max_capacity     = 3
       min_capacity     = 1
+      instance_type    = "t3.large"
+      subnets          = [data.terraform_remote_state.network.outputs.private_subnets[0]]
 
-      instance_type = "t3.large"
+      k8s_labels = {
+        Environment = local.environment
+      }
+    }
+    t3large_az2 = {
+      desired_capacity = 1
+      max_capacity     = 3
+      min_capacity     = 1
+      instance_type    = "t3.large"
+      subnets          = [data.terraform_remote_state.network.outputs.private_subnets[1]]
+
       k8s_labels = {
         Environment = local.environment
       }
     }
   }
+
+  cluster_log_retention_in_days = 7
+  cluster_enabled_log_types = [
+    "api",
+    "audit",
+    "authenticator",
+    "controllerManager",
+    "scheduler"
+  ]
 }
