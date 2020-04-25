@@ -88,6 +88,7 @@ variable "deletion_protection" {
   description = "If true, prevent rds to be deleted"
   default     = false
 }
+
 variable "multi_az" {
   type        = bool
   description = "If true, prevent rds to be deleted"
