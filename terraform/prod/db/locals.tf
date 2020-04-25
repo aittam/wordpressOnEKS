@@ -4,4 +4,5 @@ locals {
   db_name        = "wponeks"
   rds_identifier = "wponeks-${local.environment}"
   db_user        = "rdsuser"
+  password       = "tempPassword"
 }
