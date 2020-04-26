@@ -1,53 +1,27 @@
 module "eks" {
-  source = "terraform-aws-modules/eks/aws"
+  source = "../../modules/ekscluster"
 
-  cluster_name     = local.cluster_name
-  cluster_version  = local.cluster_version
-  subnets          = data.terraform_remote_state.network.outputs.private_subnets
-  write_kubeconfig = false
+  cluster_name    = local.cluster_name
+  cluster_version = local.cluster_version
+  subnets         = data.terraform_remote_state.network.outputs.private_subnets
+  vpc_id          = data.terraform_remote_state.network.outputs.vpc_id
+
+  # workers specs
+  worker_disk_size            = 30
+  node_group_desired_capacity = 1
+  node_group_min_capacity     = 1
+  node_group_max_capacity     = 2
+  node_group_instance_type    = "t3.large"
+  node_group_name_prefix      = "t3large"
+
+  cluster_log_retention_in_days = 7
+
+  k8s_labels = {
+    Environment = local.environment
+  }
 
   tags = {
     Environment = local.environment
   }
 
-  vpc_id = data.terraform_remote_state.network.outputs.vpc_id
-
-  node_groups_defaults = {
-    ami_type  = "AL2_x86_64"
-    disk_size = 50
-  }
-
-  node_groups = {
-    t3large_az1 = {
-      desired_capacity = 1
-      max_capacity     = 3
-      min_capacity     = 1
-      instance_type    = "t3.large"
-      subnets          = [data.terraform_remote_state.network.outputs.private_subnets[0]]
-
-      k8s_labels = {
-        Environment = local.environment
-      }
-    }
-    t3large_az2 = {
-      desired_capacity = 1
-      max_capacity     = 3
-      min_capacity     = 1
-      instance_type    = "t3.large"
-      subnets          = [data.terraform_remote_state.network.outputs.private_subnets[1]]
-
-      k8s_labels = {
-        Environment = local.environment
-      }
-    }
-  }
-
-  cluster_log_retention_in_days = 7
-  cluster_enabled_log_types = [
-    "api",
-    "audit",
-    "authenticator",
-    "controllerManager",
-    "scheduler"
-  ]
 }
