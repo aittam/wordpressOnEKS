@@ -6,6 +6,7 @@ module "eks" {
   cluster_version  = var.cluster_version
   subnets          = var.subnets
   write_kubeconfig = false
+  enable_irsa      = true
 
   tags = var.tags
 

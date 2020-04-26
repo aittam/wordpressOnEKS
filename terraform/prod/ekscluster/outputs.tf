@@ -13,7 +13,11 @@ output "config_map_aws_auth" {
   value       = module.eks.config_map_aws_auth
 }
 
-output "region" {
-  description = "AWS region."
-  value       = local.region
+output "cluster_id" {
+  value = module.eks.cluster_id
+}
+
+output "oidc_provider_arn" {
+  description = "The ARN of the OIDC Provider"
+  value       = module.eks.oidc_provider_arn
 }
