@@ -38,3 +38,23 @@ resource "aws_security_group" "efs" {
 
   tags = var.tags
 }
+
+
+resource "helm_release" "efs-provisioner" {
+  name       = "efs-provisioner"
+  repository = data.helm_repository.stable.metadata[0].name
+  chart      = "efs-provisioner"
+
+  values = [<<EOF
+  efsProvisioner:
+    efsFileSystemId: ${aws_efs_file_system.this.id}
+    awsRegion: ${data.aws_region.current.name}
+    path: /${var.name}
+    provisionerName: ${var.name}/aws-efs
+    storageClass:
+      name: aws-efs
+      gidAllocate:
+        enabled: false
+  EOF
+  ]
+}
