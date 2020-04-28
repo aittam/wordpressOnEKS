@@ -1,6 +1,6 @@
 
 external_name: &dnsname www.mywordpress.com
-fullnameOverride: ""
+nginx_status_path: &statuspath /status
 
 wordpress:
   db_name: wponeks
@@ -22,16 +22,15 @@ phpfpm:
   listen: /var/run/php.sock
   user: www-data
   group: www-data
-  path: &phpfpmpath /usr/local/etc/php-fpm.d/www.conf
+  path: /usr/local/etc/php-fpm.d/www.conf
 
 service:
   type: NodePort
   port: 80
 
 deployment:
-  replicaCount: 1
+  replicaCount: 3
   efs_storage_class: aws-efs
-  phpfpm_path: *phpfpmpath
   wp_container:
     name: wordpress
     image_repository: 831650818513.dkr.ecr.eu-west-1.amazonaws.com/wponeks-prod-wordpress:latest
@@ -47,7 +46,6 @@ deployment:
     name: nginx
     image_repository: nginx
     image_pullPolicy: IfNotPresent
-    readiness_probe_path: &healthcheck_path /status 
     resources:
       limits:
         cpu: 300m
@@ -62,7 +60,7 @@ ingress:
   annotations:
     kubernetes.io/ingress.class: alb
     alb.ingress.kubernetes.io/scheme: internet-facing
-    alb.ingress.kubernetes.io/healthcheck-path: *healthcheck_path
+    alb.ingress.kubernetes.io/healthcheck-path: *statuspath
   hosts:
     - host: *dnsname
       paths:

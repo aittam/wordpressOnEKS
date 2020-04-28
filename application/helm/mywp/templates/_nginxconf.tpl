@@ -3,7 +3,7 @@
 server {
     listen 80 default_server;
     # monitoring health check
-    location = {{ .Values.deployment.nginx_container.readiness_probe_path }} {
+    location = /status {
         stub_status on;
         access_log off;
     }
@@ -26,8 +26,6 @@ server {
     index index.php;
 
     location / {
-        # This is cool because no php is touched for static content.
-        # include the "?$args" part so non-default permalinks doesn't break when using query string
         try_files $uri $uri/ /index.php?$args;
     }
 
@@ -45,6 +43,7 @@ server {
    # Inject HTTP Header with X-XSS protection to mitigate Cross-Site scripting attack
    add_header X-XSS-Protection "1; mode=block";
 
+   # avoid clickjacking attacks,
    add_header X-Frame-Options sameorigin;
 
    add_header X-Content-Type-Options nosniff;
