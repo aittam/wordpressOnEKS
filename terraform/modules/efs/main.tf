@@ -44,6 +44,7 @@ resource "helm_release" "efs-provisioner" {
   name       = "efs-provisioner"
   repository = data.helm_repository.stable.metadata[0].name
   chart      = "efs-provisioner"
+  namespace  = "kube-system"
 
   values = [<<EOF
   efsProvisioner:
