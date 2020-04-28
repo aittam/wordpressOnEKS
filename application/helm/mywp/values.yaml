@@ -33,8 +33,8 @@ deployment:
   efs_storage_class: aws-efs
   wp_container:
     name: wordpress
-    image_repository: 831650818513.dkr.ecr.eu-west-1.amazonaws.com/wponeks-prod-wordpress:latest
-    image_pullPolicy: Always
+    image_repository: 123456789123.dkr.ecr.eu-west-1.amazonaws.com/wponeks-prod-wordpress:stable-1.0 #replace with your own image 
+    image_pullPolicy: IfNotPresent
     resources:
       limits:
         cpu: 500m
