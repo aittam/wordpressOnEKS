@@ -1,4 +1,6 @@
 {{- $phpsocket := .Values.phpfpm.listen -}}
+{{- $externalname := .Values.external_name -}}
+{{- $phpfpm_path := .Values.phpfpm.path -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -26,12 +28,21 @@ spec:
               protocol: TCP
           livenessProbe:
             httpGet:
-              path: {{ .nginx_container.readiness_probe_path }}
+              path: /status
               port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+            failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: {{ .nginx_container.readiness_probe_path }}
+              path: /
               port: http
+              httpHeaders:
+              - name: Host
+                value: {{ $externalname }}
+            initialDelaySeconds: 5
+            periodSeconds: 20
+            failureThreshold: 5
           resources:
             {{- toYaml .nginx_container.resources | nindent 12 }}
           volumeMounts:
@@ -78,7 +89,7 @@ spec:
           - name: wproot
             mountPath: /var/www/html
           - name: phpfpmconfig
-            mountPath: {{ .phpfpm_path }}
+            mountPath: {{ $phpfpm_path }}
             subPath: www.conf
     {{- end }}
       volumes:
@@ -106,15 +117,12 @@ spec:
         - name: php
           emptyDir:
             medium: Memory
-    # affinity:
-    #   podAntiAffinity:
-    #     preferredDuringSchedulingIgnoredDuringExecution:
-    #     - weight: 100 # prevent the scheduler from locating two pods on the same node
-    #       podAffinityTerm:
-    #         topologyKey: kubernetes.io/hostname
-    #         labelSelector:
-    #           matchExpressions:
-    #             - key: "app"
-    #               operator: In
-    #               values:
-    #               - my-blog
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100 # prevent the scheduler from locating two pods on the same node
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchLabels:
+                  {{- include "mywp.selectorLabels" . | nindent 18 }}
