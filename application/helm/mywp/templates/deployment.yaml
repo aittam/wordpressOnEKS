@@ -1,0 +1,120 @@
+{{- $phpsocket := .Values.phpfpm.listen -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mywp.fullname" . }}
+  labels:
+    {{- include "mywp.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.deployment.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "mywp.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "mywp.selectorLabels" . | nindent 8 }}
+    spec:
+    {{- with .Values.deployment }}
+      containers:
+        - name: {{ .nginx_container.name }}
+          image: "{{ .nginx_container.image_repository }}"
+          imagePullPolicy: {{ .nginx_container.image_pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: {{ .nginx_container.readiness_probe_path }}
+              port: http
+          readinessProbe:
+            httpGet:
+              path: {{ .nginx_container.readiness_probe_path }}
+              port: http
+          resources:
+            {{- toYaml .nginx_container.resources | nindent 12 }}
+          volumeMounts:
+          - name: efs
+            mountPath: "/var/www/html/wp-content/uploads"
+          - name: wproot
+            mountPath: /var/www/html
+          - name: php
+            mountPath: /var/run
+          - name: nginxconfig
+            mountPath: /etc/nginx/conf.d/default.conf
+            subPath: default.conf
+        - name: {{ .wp_container.name }}
+          image: "{{ .wp_container.image_repository }}"
+          imagePullPolicy: {{ .wp_container.image_pullPolicy }}
+          resources:
+            {{- toYaml .wp_container.resources | nindent 12 }}
+          workingDir: /var/www/html
+          env:
+          - name: FCGI_CONNECT # needed for probes
+            value: {{ $phpsocket }}
+          readinessProbe:
+            exec:
+              command:
+              - /usr/local/bin/php-fpm-hc # a simple ping since this means it's ready to handle traffic
+            initialDelaySeconds: 0
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            exec:
+              command:
+              - /usr/local/bin/php-fpm-hc
+              - --listen-queue=10 # fails if there are more than 10 processes waiting in the fpm queue
+            initialDelaySeconds: 2
+            periodSeconds: 10
+            failureThreshold: 6
+          volumeMounts:
+          - name: wpconfig
+            mountPath: /var/www/html/wp-config.php
+            subPath: wp-config.php
+            readOnly: true
+          - name: php
+            mountPath: /var/run
+          - name: wproot
+            mountPath: /var/www/html
+          - name: phpfpmconfig
+            mountPath: {{ .phpfpm_path }}
+            subPath: www.conf
+    {{- end }}
+      volumes:
+        - name: efs
+          persistentVolumeClaim:
+            claimName: {{ template "mywp.fullname" . }}-efs-pvc
+        - name: wpconfig
+          secret:
+            secretName: {{ template "mywp.fullname" . }}-wpconfig
+        - name: phpfpmconfig
+          configMap:
+            name: {{ template "mywp.fullname" . }}-phpfpmconfig
+            items:
+            - key: www.conf
+              path: www.conf
+        - name: nginxconfig
+          configMap:
+            name: {{ template "mywp.fullname" . }}-nginxconf
+            items:
+            - key: default.conf
+              path: default.conf
+        - name: wproot
+          emptyDir:
+            medium: Memory
+        - name: php
+          emptyDir:
+            medium: Memory
+    # affinity:
+    #   podAntiAffinity:
+    #     preferredDuringSchedulingIgnoredDuringExecution:
+    #     - weight: 100 # prevent the scheduler from locating two pods on the same node
+    #       podAffinityTerm:
+    #         topologyKey: kubernetes.io/hostname
+    #         labelSelector:
+    #           matchExpressions:
+    #             - key: "app"
+    #               operator: In
+    #               values:
+    #               - my-blog
