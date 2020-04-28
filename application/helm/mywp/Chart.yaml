@@ -1,0 +1,6 @@
+apiVersion: v2
+name: mywp
+description: A Helm chart for deploying wordpress on EKS
+type: application
+version: 0.4.0
+appVersion: 0.1

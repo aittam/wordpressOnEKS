@@ -1,0 +1,73 @@
+
+external_name: &dnsname www.mywordpress.com
+fullnameOverride: ""
+
+wordpress:
+  db_name: wponeks
+  db_user: rdsuser
+  db_password: tempPassword
+  db_host: wponeks-prod.cy8rkpgbazsx.eu-west-1.rds.amazonaws.com
+  # use different values for each installation
+  # https://api.wordpress.org/secret-key/1.1/salt
+  auth_key: 'override this with your unique phrase'
+  secure_auth_key: 'override this with your unique phrase'
+  logged_in_key: 'override this with your unique phrase'
+  nonce_key: 'override this with your unique phrase'
+  auth_salt: 'override this with your unique phrase'
+  secure_auth_salt: 'override this with your unique phrase'
+  logged_in_salt: 'override this with your unique phrase'
+  nonce_salt: 'override this with your unique phrase'
+
+phpfpm:
+  listen: /var/run/php.sock
+  user: www-data
+  group: www-data
+  path: &phpfpmpath /usr/local/etc/php-fpm.d/www.conf
+
+service:
+  type: NodePort
+  port: 80
+
+deployment:
+  replicaCount: 1
+  efs_storage_class: aws-efs
+  phpfpm_path: *phpfpmpath
+  wp_container:
+    name: wordpress
+    image_repository: 831650818513.dkr.ecr.eu-west-1.amazonaws.com/wponeks-prod-wordpress:latest
+    image_pullPolicy: Always
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+  nginx_container:
+    name: nginx
+    image_repository: nginx
+    image_pullPolicy: IfNotPresent
+    readiness_probe_path: &healthcheck_path /status 
+    resources:
+      limits:
+        cpu: 300m
+        memory: 256Mi
+      requests:
+        cpu: 50m
+        memory: 128Mi
+
+
+ingress:
+  enabled: true
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/healthcheck-path: *healthcheck_path
+  hosts:
+    - host: *dnsname
+      paths:
+      - /*
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
