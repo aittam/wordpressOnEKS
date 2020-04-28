@@ -73,3 +73,8 @@ variable "cluster_log_retention_in_days" {
   type        = number
   default     = 7
 }
+
+variable "workers_additional_policies" {
+  type        = list(string)
+  description = "Subnet IDs"
+}

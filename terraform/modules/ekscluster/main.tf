@@ -12,6 +12,8 @@ module "eks" {
 
   vpc_id = var.vpc_id
 
+  workers_additional_policies = var.workers_additional_policies
+
   node_groups_defaults = {
     ami_type  = "AL2_x86_64"
     disk_size = var.worker_disk_size

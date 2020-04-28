@@ -6,6 +6,8 @@ module "eks" {
   subnets         = data.terraform_remote_state.network.outputs.private_subnets
   vpc_id          = data.terraform_remote_state.network.outputs.vpc_id
 
+  workers_additional_policies = local.workers_additional_policies
+
   # workers specs
   worker_disk_size            = 30
   node_group_desired_capacity = 1
