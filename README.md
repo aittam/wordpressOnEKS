@@ -54,7 +54,6 @@ You can build the image with the following commands:
 cd application/docker/wordpress
 docker build -t wponeks-prod-wordpress .
 docker tag wponeks-prod-wordpress 123456789123.dkr.ecr.eu-west-1.amazonaws.com/wponeks-prod-wordpress:stable-1.0
-$(aws ecr get-login)
 aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin 123456789123.dkr.ecr.eu-west-1.amazonaws.com/wponeks-prod-wordpress
 docker push 123456789123.dkr.ecr.eu-west-1.amazonaws.com/wponeks-prod-wordpress:stable-1.0.0
 ```
@@ -68,7 +67,7 @@ cd application/helm/mywp
 helm install mywp .
 ```
 
-Tweak the parameters in application/helm/mywp/template/values.yaml to suit your needs.
+Tweak the parameters in application/helm/mywp/template/values.yaml or ovveride it on the command line to suit your needs.
 
 ## Infrastructure
 
